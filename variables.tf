@@ -17,17 +17,17 @@ variable "tags" {
 
 variable "cidrs" {
   description = "Name and CIDRs for subnets"
-  type = map(string)
+  type        = map(string)
 }
 
 variable "address_space" {
   description = "Address space for the Virtual Network"
-  type = list(string)
+  type        = list(string)
 }
 
 variable "nsg_rules" {
   description = "List of NSG rules"
-    type = list(object({
+  type = list(object({
     name                       = string
     priority                   = number
     direction                  = string

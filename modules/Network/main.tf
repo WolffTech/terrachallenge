@@ -41,7 +41,7 @@ resource "azurerm_subnet" "this" {
 resource "azurerm_subnet_network_security_group_association" "this" {
   count = contains(keys(var.subnet_cidrs), "Web") ? 1 : 0
 
-  subnet_id = azurerm_subnet.this["Web"].id
+  subnet_id                 = azurerm_subnet.this["Web"].id
   network_security_group_id = azurerm_network_security_group.this.id
 
   depends_on = [azurerm_subnet.this]
