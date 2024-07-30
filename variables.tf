@@ -18,3 +18,8 @@ variable "address_space" {
   description = "Address space to use for virtaul network"
   type        = list(string)
 }
+
+variable "subnet_map" {
+  description = "Map of address prefix names and IPs"
+  type        = map(list(string))
+}
