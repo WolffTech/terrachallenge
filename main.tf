@@ -4,6 +4,8 @@ resource "azurerm_resource_group" "this" {
   tags     = var.tags
 }
 
+# Network
+
 resource "azurerm_virtual_network" "this" {
   name                = "Wolff-VN-${var.prefix}"
   resource_group_name = azurerm_resource_group.this.name
@@ -30,3 +32,53 @@ resource "azurerm_subnet_network_security_group_association" "this" {
   subnet_id                 = azurerm_subnet.this["Web"].id
   network_security_group_id = azurerm_network_security_group.this.id
 }
+
+# Linux VM
+
+resource "azurerm_network_interface" "this" {
+  name                = "Wolff-NIC_Linux-${var.prefix}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.this["Web"].id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+# Private Key for SSH
+resource "tls_private_key" "this" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "azurerm_linux_virtual_machine" "this" {
+  name                = "Wolff-LinuxVM"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  size                = var.vm_size
+  admin_username      = var.login_name
+  admin_password      = var.login_pass
+  network_interface_ids = [
+    azurerm_network_interface.this.id,
+  ]
+
+  admin_ssh_key {
+    username   = var.login_name
+    public_key = tls_private_key.this.public_key_openssh
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+}
+

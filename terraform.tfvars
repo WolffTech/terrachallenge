@@ -25,3 +25,9 @@ subnet_map = {
   "Data"    = ["10.0.2.0/24"]
   "Jumpbox" = ["10.0.3.0/24"]
 }
+
+# VMs
+
+vm_size    = "B1ms"
+login_name = "adminuser"
+login_pass = "TempPassword!"
