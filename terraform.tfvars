@@ -12,3 +12,7 @@ tags = {
   Version     = "Checkpoint1"
   Deployment  = "Terraform"
 }
+
+# Network
+
+address_space = ["10.0.0.0/24"]

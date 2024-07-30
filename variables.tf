@@ -13,3 +13,8 @@ variable "tags" {
   description = "List of tags to use on all resources"
   type        = map(string)
 }
+
+variable "address_space" {
+  description = "Address space to use for virtaul network"
+  type        = list(string)
+}
