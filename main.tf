@@ -82,3 +82,44 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 }
 
+# Windows VM
+
+resource "azurerm_network_interface" "that" {
+  name                = "Wolff-NIC_Windows-${var.prefix}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.this["Jumpbox"].id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_windows_virtual_machine" "that" {
+  name                = "Wolff-WindowsVM"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  size                = var.vm_size
+  admin_username      = var.login_name
+  admin_password      = var.login_pass
+
+  network_interface_ids = [
+    azurerm_network_interface.that.id
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2016-Datacenter"
+    version   = "latest"
+  }
+
+  tags = var.tags
+}
+
