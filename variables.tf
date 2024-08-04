@@ -27,7 +27,7 @@ variable "subnet_map" {
 variable "vm_size" {
   description = "Size of the VM"
   type        = string
-  default     = "B1s"
+  default     = "Standard_B1s"
 }
 
 variable "login_name" {
