@@ -33,6 +33,17 @@ resource "azurerm_subnet_network_security_group_association" "this" {
   network_security_group_id = azurerm_network_security_group.this.id
 }
 
+# Recovery Services Vault
+
+resource "azurerm_recovery_services_vault" "this" {
+  name                = "Wolff-RSV-${var.prefix}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
+
+  soft_delete_enabled = false
+}
+
 # Linux VM
 
 resource "azurerm_network_interface" "this" {
