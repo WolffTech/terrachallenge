@@ -44,6 +44,25 @@ resource "azurerm_recovery_services_vault" "this" {
   soft_delete_enabled = false
 }
 
+# Backup Policy
+
+resource "azurerm_backup_policy_vm" "this" {
+  name                = "tfex-recovery-vault-policy"
+  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = azurerm_recovery_services_vault.this.name
+
+  timezone = "UTC"
+
+  backup {
+    frequency = "Daily"
+    time      = "23:00"
+  }
+
+  retention_daily {
+    count = 1
+  }
+}
+
 # Linux VM
 
 resource "azurerm_network_interface" "this" {
