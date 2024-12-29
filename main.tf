@@ -26,11 +26,46 @@ resource "azurerm_network_security_group" "this" {
   name                = "Wolff-NSG-${var.prefix}"
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
+  tags = var.tags
 }
 
 resource "azurerm_subnet_network_security_group_association" "this" {
   subnet_id                 = azurerm_subnet.this["Web"].id
   network_security_group_id = azurerm_network_security_group.this.id
+
+}
+
+# Recovery Services Vault
+
+resource "azurerm_recovery_services_vault" "this" {
+  name                = "Wolff-RSV-${var.prefix}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
+
+  soft_delete_enabled = false
+
+  tags = var.tags
+
+}
+
+# Backup Policy
+
+resource "azurerm_backup_policy_vm" "this" {
+  name                = "tfex-recovery-vault-policy"
+  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = azurerm_recovery_services_vault.this.name
+
+  timezone = "UTC"
+
+  backup {
+    frequency = "Daily"
+    time      = "23:00"
+  }
+
+  retention_daily {
+    count = 1
+  }
 }
 
 # Linux VM
@@ -39,6 +74,8 @@ resource "azurerm_network_interface" "this" {
   name                = "Wolff-NIC_Linux-${var.prefix}"
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
+  tags = var.tags
+
 
   ip_configuration {
     name                          = "internal"
@@ -80,6 +117,14 @@ resource "azurerm_linux_virtual_machine" "this" {
     sku       = "22_04-lts"
     version   = "latest"
   }
+
+  tags = var.tags
+}
+
+resource "azurerm_backup_protected_vm" "this" {
+  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = azurerm_recovery_services_vault.this.name
+  backup_policy_id    = azurerm_backup_policy_vm.this.id
 }
 
 # Windows VM
@@ -94,6 +139,8 @@ resource "azurerm_network_interface" "that" {
     subnet_id                     = azurerm_subnet.this["Jumpbox"].id
     private_ip_address_allocation = "Dynamic"
   }
+
+  tags = var.tags
 }
 
 resource "azurerm_windows_virtual_machine" "that" {
@@ -121,5 +168,11 @@ resource "azurerm_windows_virtual_machine" "that" {
   }
 
   tags = var.tags
+}
+
+resource "azurerm_backup_protected_vm" "that" {
+  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = azurerm_recovery_services_vault.this.name
+  backup_policy_id    = azurerm_backup_policy_vm.this.id
 }
 
