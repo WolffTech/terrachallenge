@@ -112,6 +112,12 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 }
 
+resource "azurerm_backup_protected_vm" "this" {
+  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = azurerm_recovery_services_vault.this.name
+  backup_policy_id    = azurerm_backup_policy_vm.this.id
+}
+
 # Windows VM
 
 resource "azurerm_network_interface" "that" {
@@ -151,5 +157,11 @@ resource "azurerm_windows_virtual_machine" "that" {
   }
 
   tags = var.tags
+}
+
+resource "azurerm_backup_protected_vm" "that" {
+  resource_group_name = azurerm_resource_group.this.name
+  recovery_vault_name = azurerm_recovery_services_vault.this.name
+  backup_policy_id    = azurerm_backup_policy_vm.this.id
 }
 
