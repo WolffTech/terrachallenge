@@ -12,7 +12,7 @@ tags = {
   Project     = "TerraChallenge"
   Team        = "IOC Engineering"
   Department  = "Managed Services"
-  Version     = "Checkpoint1"
+  Version     = "Checkpoint3"
   Deployment  = "Terraform"
 }
 
