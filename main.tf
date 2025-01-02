@@ -1,15 +1,16 @@
-resource "azurerm_resource_group" "this" {
-  name     = "Wolff-RG-${var.prefix}"
-  location = var.location
-  tags     = var.tags
+module "resource_group" {
+  source         = "./modules/rg"
+  az_rg_name     = "Wolff-RG-${var.prefix}"
+  az_rg_location = var.location
+  az_tags        = var.tags
 }
 
 # Network
 
 resource "azurerm_virtual_network" "this" {
   name                = "Wolff-VN-${var.prefix}"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  resource_group_name = module.resource_group.az-rg-name
+  location            = module.resource_group.az-rg-location
   address_space       = var.address_space
   tags                = var.tags
 }
@@ -17,16 +18,16 @@ resource "azurerm_virtual_network" "this" {
 resource "azurerm_subnet" "this" {
   for_each             = var.subnet_map
   name                 = "Wolff-Subnet_${each.key}-${var.prefix}"
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
+  resource_group_name  = module.resource_group.az-rg-name
+  virtual_network_name = module.resource_group.az-rg-location
   address_prefixes     = each.value
 }
 
 resource "azurerm_network_security_group" "this" {
   name                = "Wolff-NSG-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  tags = var.tags
+  location            = module.resource_group.az-rg-location
+  resource_group_name = module.resource_group.az-rg-name
+  tags                = var.tags
 }
 
 resource "azurerm_subnet_network_security_group_association" "this" {
@@ -39,8 +40,8 @@ resource "azurerm_subnet_network_security_group_association" "this" {
 
 resource "azurerm_recovery_services_vault" "this" {
   name                = "Wolff-RSV-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
+  location            = module.resource_group.az-rg-location
+  resource_group_name = module.resource_group.az-rg-name
   sku                 = "Standard"
 
   soft_delete_enabled = false
@@ -53,7 +54,7 @@ resource "azurerm_recovery_services_vault" "this" {
 
 resource "azurerm_backup_policy_vm" "this" {
   name                = "tfex-recovery-vault-policy"
-  resource_group_name = azurerm_resource_group.this.name
+  resource_group_name = module.resource_group.az-rg-name
   recovery_vault_name = azurerm_recovery_services_vault.this.name
 
   timezone = "UTC"
@@ -72,9 +73,9 @@ resource "azurerm_backup_policy_vm" "this" {
 
 resource "azurerm_network_interface" "this" {
   name                = "Wolff-NIC_Linux-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  tags = var.tags
+  location            = module.resource_group.az-rg-location
+  resource_group_name = module.resource_group.az-rg-name
+  tags                = var.tags
 
 
   ip_configuration {
@@ -92,8 +93,8 @@ resource "tls_private_key" "this" {
 
 resource "azurerm_linux_virtual_machine" "this" {
   name                = "Wolff-LinuxVM"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  resource_group_name = module.resource_group.az-rg-name
+  location            = module.resource_group.az-rg-location
   size                = var.vm_size
   admin_username      = var.login_name
   admin_password      = var.login_pass
@@ -122,7 +123,7 @@ resource "azurerm_linux_virtual_machine" "this" {
 }
 
 resource "azurerm_backup_protected_vm" "this" {
-  resource_group_name = azurerm_resource_group.this.name
+  resource_group_name = module.resource_group.az-rg-name
   recovery_vault_name = azurerm_recovery_services_vault.this.name
   backup_policy_id    = azurerm_backup_policy_vm.this.id
 }
@@ -131,8 +132,8 @@ resource "azurerm_backup_protected_vm" "this" {
 
 resource "azurerm_network_interface" "that" {
   name                = "Wolff-NIC_Windows-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
+  location            = module.resource_group.az-rg-location
+  resource_group_name = module.resource_group.az-rg-name
 
   ip_configuration {
     name                          = "internal"
@@ -145,8 +146,8 @@ resource "azurerm_network_interface" "that" {
 
 resource "azurerm_windows_virtual_machine" "that" {
   name                = "Wolff-WindowsVM"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  resource_group_name = module.resource_group.az-rg-name
+  location            = module.resource_group.az-rg-location
   size                = var.vm_size
   admin_username      = var.login_name
   admin_password      = var.login_pass
@@ -171,7 +172,7 @@ resource "azurerm_windows_virtual_machine" "that" {
 }
 
 resource "azurerm_backup_protected_vm" "that" {
-  resource_group_name = azurerm_resource_group.this.name
+  resource_group_name = module.resource_group.az-rg-name
   recovery_vault_name = azurerm_recovery_services_vault.this.name
   backup_policy_id    = azurerm_backup_policy_vm.this.id
 }
