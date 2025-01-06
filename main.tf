@@ -94,6 +94,13 @@ resource "random_password" "random_password" {
 
 # Linux VM
 
+resource "azurerm_key_vault_secret" "admin_password_linux" {
+  name         = "adminpasswordlinux"
+  value        = random_password.random_password.result
+  key_vault_id = module.key_vault.id
+  depends_on   = [module.key_vault]
+}
+
 resource "azurerm_network_interface" "nic_linuxvm_1" {
   name                = "Wolff-NIC_Linux-${var.prefix}"
   location            = module.resource_group.location
@@ -120,7 +127,7 @@ resource "azurerm_linux_virtual_machine" "linuxvm_1" {
   location            = module.resource_group.location
   size                = var.vm_size
   admin_username      = var.login_name
-  admin_password      = var.login_pass
+  admin_password      = azurerm_key_vault_secret.admin_password_linux.value
   network_interface_ids = [
     azurerm_network_interface.nic_linuxvm_1.id,
   ]
