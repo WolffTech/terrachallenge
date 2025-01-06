@@ -82,6 +82,16 @@ resource "azurerm_backup_policy_vm" "abp" {
   }
 }
 
+# Random Password Generator
+
+resource "random_password" "random_password" {
+  length    = var.pass_length
+  special   = var.pass_special
+  min_lower = var.pass_lower
+  min_upper = var.pass_upper
+  numeric   = var.pass_numeric
+}
+
 # Linux VM
 
 resource "azurerm_network_interface" "nic_linuxvm_1" {
