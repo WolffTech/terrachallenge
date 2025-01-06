@@ -28,6 +28,18 @@ resource "azurerm_network_security_group" "nsg" {
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   tags                = var.tags
+
+  security_rule {
+    name                       = "AllowAzureLoadBalancer"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range         = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "AzureLoadBalancer"
+    destination_address_prefix = "VirtualNetwork"
+  }
 }
 
 resource "azurerm_subnet_network_security_group_association" "nsga" {
