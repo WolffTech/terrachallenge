@@ -1,4 +1,4 @@
-variable "key_vault_name" {
+variable "name" {
   type        = string
   description = "Name of the Key Vault"
 }
@@ -11,16 +11,6 @@ variable "location" {
 variable "resource_group_name" {
   type        = string
   description = "Name of the resource group"
-}
-
-variable "tenant_id" {
-  type        = string
-  description = "Azure AD tenant ID"
-}
-
-variable "object_id" {
-  type        = string
-  description = "Object ID of the service principal or user"
 }
 
 variable "enabled_for_disk_encryption" {
