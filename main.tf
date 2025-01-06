@@ -1,16 +1,16 @@
 module "resource_group" {
-  source         = "./modules/rg"
-  az_rg_name     = "Wolff-RG-${var.prefix}"
-  az_rg_location = var.location
-  az_tags        = var.tags
+  source   = "./modules/rg"
+  name     = "Wolff-RG-${var.prefix}"
+  location = var.location
+  tags     = var.tags
 }
 
 # Network
 
 resource "azurerm_virtual_network" "vnet" {
   name                = "Wolff-VN-${var.prefix}"
-  resource_group_name = module.resource_group.az-rg-name
-  location            = module.resource_group.az-rg-location
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
   address_space       = var.address_space
   tags                = var.tags
 }
@@ -18,15 +18,15 @@ resource "azurerm_virtual_network" "vnet" {
 resource "azurerm_subnet" "subnet" {
   for_each             = var.subnet_map
   name                 = "Wolff-Subnet_${each.key}-${var.prefix}"
-  resource_group_name  = module.resource_group.az-rg-name
-  virtual_network_name = module.resource_group.az-rg-location
+  resource_group_name  = module.resource_group.name
+  virtual_network_name = module.resource_group.location
   address_prefixes     = each.value
 }
 
 resource "azurerm_network_security_group" "nsg" {
   name                = "Wolff-NSG-${var.prefix}"
-  location            = module.resource_group.az-rg-location
-  resource_group_name = module.resource_group.az-rg-name
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
   tags                = var.tags
 }
 
@@ -40,8 +40,8 @@ resource "azurerm_subnet_network_security_group_association" "nsga" {
 
 resource "azurerm_recovery_services_vault" "rsv" {
   name                = "Wolff-RSV-${var.prefix}"
-  location            = module.resource_group.az-rg-location
-  resource_group_name = module.resource_group.az-rg-name
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
   sku                 = "Standard"
 
   soft_delete_enabled = false
@@ -54,7 +54,7 @@ resource "azurerm_recovery_services_vault" "rsv" {
 
 resource "azurerm_backup_policy_vm" "abp" {
   name                = "tfex-recovery-vault-policy"
-  resource_group_name = module.resource_group.az-rg-name
+  resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
 
   timezone = "UTC"
@@ -73,8 +73,8 @@ resource "azurerm_backup_policy_vm" "abp" {
 
 resource "azurerm_network_interface" "nic_linuxvm_1" {
   name                = "Wolff-NIC_Linux-${var.prefix}"
-  location            = module.resource_group.az-rg-location
-  resource_group_name = module.resource_group.az-rg-name
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
   tags                = var.tags
 
 
@@ -93,8 +93,8 @@ resource "tls_private_key" "tlspk" {
 
 resource "azurerm_linux_virtual_machine" "linuxvm_1" {
   name                = "Wolff-LinuxVM"
-  resource_group_name = module.resource_group.az-rg-name
-  location            = module.resource_group.az-rg-location
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
   size                = var.vm_size
   admin_username      = var.login_name
   admin_password      = var.login_pass
@@ -123,7 +123,7 @@ resource "azurerm_linux_virtual_machine" "linuxvm_1" {
 }
 
 resource "azurerm_backup_protected_vm" "pvm_linuxvm_1" {
-  resource_group_name = module.resource_group.az-rg-name
+  resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
 }
@@ -132,8 +132,8 @@ resource "azurerm_backup_protected_vm" "pvm_linuxvm_1" {
 
 resource "azurerm_network_interface" "nic_windowsvm_1" {
   name                = "Wolff-NIC_Windows-${var.prefix}"
-  location            = module.resource_group.az-rg-location
-  resource_group_name = module.resource_group.az-rg-name
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
 
   ip_configuration {
     name                          = "internal"
@@ -146,8 +146,8 @@ resource "azurerm_network_interface" "nic_windowsvm_1" {
 
 resource "azurerm_windows_virtual_machine" "windowsvm_1" {
   name                = "Wolff-WindowsVM"
-  resource_group_name = module.resource_group.az-rg-name
-  location            = module.resource_group.az-rg-location
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
   size                = var.vm_size
   admin_username      = var.login_name
   admin_password      = var.login_pass
@@ -172,7 +172,7 @@ resource "azurerm_windows_virtual_machine" "windowsvm_1" {
 }
 
 resource "azurerm_backup_protected_vm" "pvm_windowsvm_1" {
-  resource_group_name = module.resource_group.az-rg-name
+  resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
 }
