@@ -160,6 +160,13 @@ resource "azurerm_backup_protected_vm" "pvm_linuxvm_1" {
 
 # Windows VM
 
+resource "azurerm_key_vault_secret" "admin_password_windows" {
+  name         = "adminpasswordwindows"
+  value        = random_password.random_password.result
+  key_vault_id = module.key_vault.id
+  depends_on   = [module.key_vault]
+}
+
 resource "azurerm_network_interface" "nic_windowsvm_1" {
   name                = "Wolff-NIC_Windows-${var.prefix}"
   location            = module.resource_group.location
@@ -180,7 +187,7 @@ resource "azurerm_windows_virtual_machine" "windowsvm_1" {
   location            = module.resource_group.location
   size                = var.vm_size
   admin_username      = var.login_name
-  admin_password      = var.login_pass
+  admin_password      = azurerm_key_vault_secret.admin_password_windows.value
 
   network_interface_ids = [
     azurerm_network_interface.nic_windowsvm_1.id
