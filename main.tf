@@ -92,6 +92,17 @@ resource "random_password" "random_password" {
   numeric   = var.pass_numeric
 }
 
+# Load Balancer
+
+module "load_balancer" {
+  source = "./modules/load_balancer"
+  lb_name = "Wolff-LB-${var.prefix}"
+  resource_group_name = module.resource_group.name
+  location = module.resource_group.location
+  frontend_port = 80
+  backend_port = 80
+}
+
 # Linux VM
 
 resource "azurerm_key_vault_secret" "admin_password_linux" {
