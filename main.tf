@@ -36,6 +36,19 @@ resource "azurerm_subnet_network_security_group_association" "nsga" {
 
 }
 
+# Key Vault
+
+module "key_vault" {
+  source                      = "./modules/keyvault"
+  name                        = "Wolff-KV-${var.prefix}"
+  location                    = var.location
+  resource_group_name         = module.resource_group.name
+  enabled_for_disk_encryption = true
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+  sku_name                    = "standard"
+}
+
 # Recovery Services Vault
 
 resource "azurerm_recovery_services_vault" "rsv" {
