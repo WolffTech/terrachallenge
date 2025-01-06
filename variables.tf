@@ -40,3 +40,33 @@ variable "login_pass" {
   type        = string
   default     = "TempPassword!"
 }
+
+variable "pass_length" {
+  description = "Length of randomly generated password"
+  type        = number
+  default     = 12
+}
+
+variable "pass_special" {
+  description = "Declare if password should include special characters"
+  type        = bool
+  default     = true
+}
+
+variable "pass_lower" {
+  description = "The minimum number of lowercase letters in the password"
+  type        = number
+  default     = 4
+}
+
+variable "pass_upper" {
+  description = "The minimum number of uppercase letters in the password"
+  type        = number
+  default     = 4
+}
+
+variable "pass_numeric" {
+  description = "Declare if password should include numbers"
+  type        = bool
+  default     = true
+}

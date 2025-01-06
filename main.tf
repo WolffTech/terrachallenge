@@ -1,4 +1,5 @@
-resource "azurerm_resource_group" "this" {
+module "resource_group" {
+  source   = "./modules/rg"
   name     = "Wolff-RG-${var.prefix}"
   location = var.location
   tags     = var.tags
@@ -6,41 +7,54 @@ resource "azurerm_resource_group" "this" {
 
 # Network
 
-resource "azurerm_virtual_network" "this" {
+resource "azurerm_virtual_network" "vnet" {
   name                = "Wolff-VN-${var.prefix}"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
   address_space       = var.address_space
   tags                = var.tags
 }
 
-resource "azurerm_subnet" "this" {
+resource "azurerm_subnet" "subnet" {
   for_each             = var.subnet_map
   name                 = "Wolff-Subnet_${each.key}-${var.prefix}"
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
+  resource_group_name  = module.resource_group.name
+  virtual_network_name = module.resource_group.location
   address_prefixes     = each.value
 }
 
-resource "azurerm_network_security_group" "this" {
+resource "azurerm_network_security_group" "nsg" {
   name                = "Wolff-NSG-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  tags = var.tags
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
+  tags                = var.tags
 }
 
-resource "azurerm_subnet_network_security_group_association" "this" {
-  subnet_id                 = azurerm_subnet.this["Web"].id
-  network_security_group_id = azurerm_network_security_group.this.id
+resource "azurerm_subnet_network_security_group_association" "nsga" {
+  subnet_id                 = azurerm_subnet.subnet["Web"].id
+  network_security_group_id = azurerm_network_security_group.nsg.id
 
+}
+
+# Key Vault
+
+module "key_vault" {
+  source                      = "./modules/keyvault"
+  name                        = "Wolff-KV-${var.prefix}"
+  location                    = var.location
+  resource_group_name         = module.resource_group.name
+  enabled_for_disk_encryption = true
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+  sku_name                    = "standard"
 }
 
 # Recovery Services Vault
 
-resource "azurerm_recovery_services_vault" "this" {
+resource "azurerm_recovery_services_vault" "rsv" {
   name                = "Wolff-RSV-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
   sku                 = "Standard"
 
   soft_delete_enabled = false
@@ -51,10 +65,10 @@ resource "azurerm_recovery_services_vault" "this" {
 
 # Backup Policy
 
-resource "azurerm_backup_policy_vm" "this" {
+resource "azurerm_backup_policy_vm" "abp" {
   name                = "tfex-recovery-vault-policy"
-  resource_group_name = azurerm_resource_group.this.name
-  recovery_vault_name = azurerm_recovery_services_vault.this.name
+  resource_group_name = module.resource_group.name
+  recovery_vault_name = azurerm_recovery_services_vault.rsv.name
 
   timezone = "UTC"
 
@@ -68,42 +82,59 @@ resource "azurerm_backup_policy_vm" "this" {
   }
 }
 
+# Random Password Generator
+
+resource "random_password" "random_password" {
+  length    = var.pass_length
+  special   = var.pass_special
+  min_lower = var.pass_lower
+  min_upper = var.pass_upper
+  numeric   = var.pass_numeric
+}
+
 # Linux VM
 
-resource "azurerm_network_interface" "this" {
+resource "azurerm_key_vault_secret" "admin_password_linux" {
+  name         = "adminpasswordlinux"
+  value        = random_password.random_password.result
+  key_vault_id = module.key_vault.id
+  depends_on   = [module.key_vault]
+}
+
+resource "azurerm_network_interface" "nic_linuxvm_1" {
   name                = "Wolff-NIC_Linux-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  tags = var.tags
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
+  tags                = var.tags
 
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.this["Web"].id
+    subnet_id                     = azurerm_subnet.subnet["Web"].id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
 # Private Key for SSH
-resource "tls_private_key" "this" {
+resource "tls_private_key" "tlspk" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-resource "azurerm_linux_virtual_machine" "this" {
+resource "azurerm_linux_virtual_machine" "linuxvm_1" {
   name                = "Wolff-LinuxVM"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
   size                = var.vm_size
   admin_username      = var.login_name
-  admin_password      = var.login_pass
+  admin_password      = azurerm_key_vault_secret.admin_password_linux.value
   network_interface_ids = [
-    azurerm_network_interface.this.id,
+    azurerm_network_interface.nic_linuxvm_1.id,
   ]
 
   admin_ssh_key {
     username   = var.login_name
-    public_key = tls_private_key.this.public_key_openssh
+    public_key = tls_private_key.tlspk.public_key_openssh
   }
 
   os_disk {
@@ -121,38 +152,45 @@ resource "azurerm_linux_virtual_machine" "this" {
   tags = var.tags
 }
 
-resource "azurerm_backup_protected_vm" "this" {
-  resource_group_name = azurerm_resource_group.this.name
-  recovery_vault_name = azurerm_recovery_services_vault.this.name
-  backup_policy_id    = azurerm_backup_policy_vm.this.id
+resource "azurerm_backup_protected_vm" "pvm_linuxvm_1" {
+  resource_group_name = module.resource_group.name
+  recovery_vault_name = azurerm_recovery_services_vault.rsv.name
+  backup_policy_id    = azurerm_backup_policy_vm.abp.id
 }
 
 # Windows VM
 
-resource "azurerm_network_interface" "that" {
+resource "azurerm_key_vault_secret" "admin_password_windows" {
+  name         = "adminpasswordwindows"
+  value        = random_password.random_password.result
+  key_vault_id = module.key_vault.id
+  depends_on   = [module.key_vault]
+}
+
+resource "azurerm_network_interface" "nic_windowsvm_1" {
   name                = "Wolff-NIC_Windows-${var.prefix}"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.this["Jumpbox"].id
+    subnet_id                     = azurerm_subnet.subnet["Jumpbox"].id
     private_ip_address_allocation = "Dynamic"
   }
 
   tags = var.tags
 }
 
-resource "azurerm_windows_virtual_machine" "that" {
+resource "azurerm_windows_virtual_machine" "windowsvm_1" {
   name                = "Wolff-WindowsVM"
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
   size                = var.vm_size
   admin_username      = var.login_name
-  admin_password      = var.login_pass
+  admin_password      = azurerm_key_vault_secret.admin_password_windows.value
 
   network_interface_ids = [
-    azurerm_network_interface.that.id
+    azurerm_network_interface.nic_windowsvm_1.id
   ]
 
   os_disk {
@@ -170,9 +208,9 @@ resource "azurerm_windows_virtual_machine" "that" {
   tags = var.tags
 }
 
-resource "azurerm_backup_protected_vm" "that" {
-  resource_group_name = azurerm_resource_group.this.name
-  recovery_vault_name = azurerm_recovery_services_vault.this.name
-  backup_policy_id    = azurerm_backup_policy_vm.this.id
+resource "azurerm_backup_protected_vm" "pvm_windowsvm_1" {
+  resource_group_name = module.resource_group.name
+  recovery_vault_name = azurerm_recovery_services_vault.rsv.name
+  backup_policy_id    = azurerm_backup_policy_vm.abp.id
 }
 
