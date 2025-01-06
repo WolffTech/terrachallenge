@@ -126,6 +126,12 @@ resource "azurerm_network_interface" "nic_linuxvm_1" {
   }
 }
 
+resource "azurerm_network_interface_backend_address_pool_association" "back_address_association" {
+  network_interface_id    = azurerm_network_interface.nic_linuxvm_1.id
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = module.load_balancer.backend_pool_id
+}
+
 # Private Key for SSH
 resource "tls_private_key" "tlspk" {
   algorithm = "RSA"
