@@ -95,3 +95,9 @@ variable "probe_request_path" {
   type    = string
   default = "/"
 }
+
+variable "linux_machine_count" {
+  description = "Amount of linux machines to create"
+  type        = number
+  default     = 2
+}
