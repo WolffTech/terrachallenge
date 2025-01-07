@@ -146,7 +146,7 @@ resource "tls_private_key" "tlspk" {
 module "linux_vms" {
   source              = "./modules/linux_vm"
   vm_count            = var.linux_machine_count
-  vm_name             = "Wolff-LinuxVM"
+  vm_name             = var.linux_vm_name
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   vm_size             = var.vm_size

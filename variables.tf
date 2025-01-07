@@ -107,6 +107,11 @@ variable "linux_machine_count" {
   default     = 2
 }
 
+variable "linux_vm_name" {
+  description = "Name to use for Linux VMs"
+  type        = string
+}
+
 variable "nsg_security_rules" {
   description = "List of security rules for the Network Security Group"
   type = list(object({
