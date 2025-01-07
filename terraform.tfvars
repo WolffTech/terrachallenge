@@ -30,4 +30,3 @@ subnet_map = {
 
 vm_size    = "Standard_B1ms"
 login_name = "adminuser"
-login_pass = "TempPassword!"

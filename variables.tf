@@ -35,12 +35,6 @@ variable "login_name" {
   type        = string
 }
 
-variable "login_pass" {
-  description = "Login password for VMs if none is set"
-  type        = string
-  default     = "TempPassword!"
-}
-
 variable "pass_length" {
   description = "Length of randomly generated password"
   type        = number
