@@ -35,7 +35,7 @@ resource "azurerm_network_security_group" "nsg" {
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "*"
-    source_port_range         = "*"
+    source_port_range          = "*"
     destination_port_range     = "*"
     source_address_prefix      = "AzureLoadBalancer"
     destination_address_prefix = "VirtualNetwork"
@@ -47,7 +47,7 @@ resource "azurerm_network_security_group" "nsg" {
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
-    source_port_range         = "*"
+    source_port_range          = "*"
     destination_port_range     = "22"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
@@ -109,22 +109,23 @@ resource "azurerm_backup_policy_vm" "abp" {
 # Random Password Generator
 
 resource "random_password" "random_password" {
-  length    = var.pass_length
-  special   = var.pass_special
-  min_lower = var.pass_lower
-  min_upper = var.pass_upper
-  numeric   = var.pass_numeric
+  length      = var.pass_length
+  special     = var.pass_special
+  min_lower   = var.pass_lower
+  min_upper   = var.pass_upper
+  min_numeric = var.pass_min_numeric
+  numeric     = var.pass_numeric
 }
 
 # Load Balancer
 
 module "load_balancer" {
-  source = "./modules/load_balancer"
-  lb_name = "Wolff-LB-${var.prefix}"
+  source              = "./modules/load_balancer"
+  lb_name             = "Wolff-LB-${var.prefix}"
   resource_group_name = module.resource_group.name
-  location = module.resource_group.location
-  frontend_port = 80
-  backend_port = 80
+  location            = module.resource_group.location
+  frontend_port       = 80
+  backend_port        = 80
 }
 
 # Linux VM

@@ -70,3 +70,9 @@ variable "pass_numeric" {
   type        = bool
   default     = true
 }
+
+variable "pass_min_numeric" {
+  description = "The minimum number of included numbers"
+  type        = number
+  default     = 2
+}
