@@ -93,7 +93,7 @@ resource "azurerm_backup_policy_vm" "abp" {
   }
 
   retention_daily {
-   count = var.backp_policy.retention_daily_count
+    count = var.backup_policy.retention_daily_count
   }
 }
 
@@ -184,7 +184,7 @@ resource "azurerm_network_interface" "nic_windowsvm_1" {
 }
 
 resource "azurerm_windows_virtual_machine" "windowsvm_1" {
-  name                = "Wolff-WindowsVM"
+  name                = "${var.windows_vm.name}-${var.prefix}"
   resource_group_name = module.resource_group.name
   location            = module.resource_group.location
   size                = var.vm_size
@@ -196,15 +196,15 @@ resource "azurerm_windows_virtual_machine" "windowsvm_1" {
   ]
 
   os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+    caching              = var.windows_vm.caching
+    storage_account_type = var.windows_vm.storage_account_type
   }
 
   source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2016-Datacenter"
-    version   = "latest"
+    publisher = var.windows_vm.image_publisher
+    offer     = var.windows_vm.image_offer
+    sku       = var.windows_vm.image_sku
+    version   = var.windows_vm.image_version
   }
 
   tags = var.tags

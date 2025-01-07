@@ -132,3 +132,16 @@ variable "backup_policy" {
     retention_daily_count = number
   })
 }
+
+variable "windows_vm" {
+  description = "Configuration for the Windows VM"
+  type = object({
+    name                 = string
+    caching              = string
+    storage_account_type = string
+    image_publisher      = string
+    image_offer          = string
+    image_sku            = string
+    image_version        = string
+  })
+}

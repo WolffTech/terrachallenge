@@ -76,6 +76,16 @@ vm_size             = "Standard_B1ms"
 login_name          = "adminuser"
 linux_machine_count = 2
 
+windows_vm = {
+  name                 = "Wolff-Win"
+  caching              = "ReadWrite"
+  storage_account_type = "Standard_LRS"
+  image_publisher      = "MicrosoftWindowsServer"
+  image_offer          = "WindowsServer"
+  image_sku            = "2016-Datacenter"
+  image_version        = "latest"
+}
+
 # Backup Policy
 
 backup_policy = {
