@@ -198,6 +198,8 @@ resource "azurerm_backup_protected_vm" "pvm_linuxvm_1" {
   resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
+  source_vm_id        = azurerm_linux_virtual_machine.linuxvm_1.id
+
 }
 
 # Windows VM
@@ -254,5 +256,6 @@ resource "azurerm_backup_protected_vm" "pvm_windowsvm_1" {
   resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
+  source_vm_id = azurerm_windows_virtual_machine.windowsvm_1.id
 }
 
