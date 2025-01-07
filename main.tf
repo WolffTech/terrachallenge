@@ -126,6 +126,12 @@ module "load_balancer" {
   location            = module.resource_group.location
   frontend_port       = 80
   backend_port        = 80
+
+  probe_protocol            = var.probe_protocol
+  probe_port                = var.probe_port
+  probe_interval            = var.probe_interval
+  probe_unhealthy_threshold = var.probe_unhealthy_threshold
+  probe_request_path        = var.probe_request_path
 }
 
 # Linux VM
@@ -256,6 +262,6 @@ resource "azurerm_backup_protected_vm" "pvm_windowsvm_1" {
   resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
-  source_vm_id = azurerm_windows_virtual_machine.windowsvm_1.id
+  source_vm_id        = azurerm_windows_virtual_machine.windowsvm_1.id
 }
 
