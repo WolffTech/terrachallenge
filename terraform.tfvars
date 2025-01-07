@@ -38,3 +38,4 @@ probe_request_path         = "/"
 
 vm_size    = "Standard_B1ms"
 login_name = "adminuser"
+linux_machine_count = 2

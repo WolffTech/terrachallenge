@@ -134,7 +134,7 @@ module "load_balancer" {
   probe_request_path        = var.probe_request_path
 }
 
-# Linux VM
+# Key Vault Secret for Linux VMs
 
 resource "azurerm_key_vault_secret" "admin_password_linux" {
   name         = "adminpasswordlinux"
@@ -143,69 +143,30 @@ resource "azurerm_key_vault_secret" "admin_password_linux" {
   depends_on   = [module.key_vault]
 }
 
-resource "azurerm_network_interface" "nic_linuxvm_1" {
-  name                = "Wolff-NIC_Linux-${var.prefix}"
-  location            = module.resource_group.location
-  resource_group_name = module.resource_group.name
-  tags                = var.tags
-
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.subnet["Web"].id
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
-resource "azurerm_network_interface_backend_address_pool_association" "back_address_association" {
-  network_interface_id    = azurerm_network_interface.nic_linuxvm_1.id
-  ip_configuration_name   = "internal"
-  backend_address_pool_id = module.load_balancer.backend_pool_id
-}
-
 # Private Key for SSH
+
 resource "tls_private_key" "tlspk" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-resource "azurerm_linux_virtual_machine" "linuxvm_1" {
-  name                = "Wolff-LinuxVM"
-  resource_group_name = module.resource_group.name
+# Linux VMs
+
+module "linux_vms" {
+  source              = "./modules/linux_vm"
+  vm_count            = var.linux_machine_count
+  vm_name             = "Wolff-LinuxVM"
   location            = module.resource_group.location
-  size                = var.vm_size
+  resource_group_name = module.resource_group.name
+  vm_size             = var.vm_size
   admin_username      = var.login_name
   admin_password      = azurerm_key_vault_secret.admin_password_linux.value
-  network_interface_ids = [
-    azurerm_network_interface.nic_linuxvm_1.id,
-  ]
-
-  admin_ssh_key {
-    username   = var.login_name
-    public_key = tls_private_key.tlspk.public_key_openssh
-  }
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts"
-    version   = "latest"
-  }
-
-  tags = var.tags
-}
-
-resource "azurerm_backup_protected_vm" "pvm_linuxvm_1" {
-  resource_group_name = module.resource_group.name
+  subnet_id           = azurerm_subnet.subnet["Web"].id
+  backend_pool_id     = module.load_balancer.backend_pool_id
+  ssh_public_key      = tls_private_key.tlspk.public_key_openssh
+  tags                = var.tags
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
-  source_vm_id        = azurerm_linux_virtual_machine.linuxvm_1.id
-
 }
 
 # Windows VM
