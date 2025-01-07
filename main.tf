@@ -19,7 +19,7 @@ resource "azurerm_subnet" "subnet" {
   for_each             = var.subnet_map
   name                 = "Wolff-Subnet_${each.key}-${var.prefix}"
   resource_group_name  = module.resource_group.name
-  virtual_network_name = module.resource_group.location
+  virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = each.value
 }
 
@@ -28,6 +28,30 @@ resource "azurerm_network_security_group" "nsg" {
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   tags                = var.tags
+
+  security_rule {
+    name                       = "AllowAzureLoadBalancer"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "AzureLoadBalancer"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  security_rule {
+    name                       = "AllowSSH"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_subnet_network_security_group_association" "nsga" {
@@ -78,18 +102,36 @@ resource "azurerm_backup_policy_vm" "abp" {
   }
 
   retention_daily {
-    count = 1
+    count = 7
   }
 }
 
 # Random Password Generator
 
 resource "random_password" "random_password" {
-  length    = var.pass_length
-  special   = var.pass_special
-  min_lower = var.pass_lower
-  min_upper = var.pass_upper
-  numeric   = var.pass_numeric
+  length      = var.pass_length
+  special     = var.pass_special
+  min_lower   = var.pass_lower
+  min_upper   = var.pass_upper
+  min_numeric = var.pass_min_numeric
+  numeric     = var.pass_numeric
+}
+
+# Load Balancer
+
+module "load_balancer" {
+  source              = "./modules/load_balancer"
+  lb_name             = "Wolff-LB-${var.prefix}"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  frontend_port       = 80
+  backend_port        = 80
+
+  probe_protocol            = var.probe_protocol
+  probe_port                = var.probe_port
+  probe_interval            = var.probe_interval
+  probe_unhealthy_threshold = var.probe_unhealthy_threshold
+  probe_request_path        = var.probe_request_path
 }
 
 # Linux VM
@@ -113,6 +155,12 @@ resource "azurerm_network_interface" "nic_linuxvm_1" {
     subnet_id                     = azurerm_subnet.subnet["Web"].id
     private_ip_address_allocation = "Dynamic"
   }
+}
+
+resource "azurerm_network_interface_backend_address_pool_association" "back_address_association" {
+  network_interface_id    = azurerm_network_interface.nic_linuxvm_1.id
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = module.load_balancer.backend_pool_id
 }
 
 # Private Key for SSH
@@ -156,6 +204,8 @@ resource "azurerm_backup_protected_vm" "pvm_linuxvm_1" {
   resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
+  source_vm_id        = azurerm_linux_virtual_machine.linuxvm_1.id
+
 }
 
 # Windows VM
@@ -212,5 +262,6 @@ resource "azurerm_backup_protected_vm" "pvm_windowsvm_1" {
   resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
   backup_policy_id    = azurerm_backup_policy_vm.abp.id
+  source_vm_id        = azurerm_windows_virtual_machine.windowsvm_1.id
 }
 

@@ -12,7 +12,7 @@ tags = {
   Project     = "TerraChallenge"
   Team        = "IOC Engineering"
   Department  = "Managed Services"
-  Version     = "Checkpoint3"
+  Version     = "Checkpoint4"
   Deployment  = "Terraform"
 }
 
@@ -26,8 +26,15 @@ subnet_map = {
   "Jumpbox" = ["10.0.3.0/24"]
 }
 
+# Health Probe
+
+probe_protocol            = "Http"
+probe_port                = 80
+probe_interval            = 15
+probe_unhealthy_threshold = 2
+probe_request_path         = "/"
+
 # VMs
 
 vm_size    = "Standard_B1ms"
 login_name = "adminuser"
-login_pass = "TempPassword!"

@@ -35,12 +35,6 @@ variable "login_name" {
   type        = string
 }
 
-variable "login_pass" {
-  description = "Login password for VMs if none is set"
-  type        = string
-  default     = "TempPassword!"
-}
-
 variable "pass_length" {
   description = "Length of randomly generated password"
   type        = number
@@ -69,4 +63,35 @@ variable "pass_numeric" {
   description = "Declare if password should include numbers"
   type        = bool
   default     = true
+}
+
+variable "pass_min_numeric" {
+  description = "The minimum number of included numbers"
+  type        = number
+  default     = 2
+}
+
+variable "probe_protocol" {
+  type    = string
+  default = "Http"
+}
+
+variable "probe_port" {
+  type    = number
+  default = 80
+}
+
+variable "probe_interval" {
+  type    = number
+  default = 15
+}
+
+variable "probe_unhealthy_threshold" {
+  type    = number
+  default = 2
+}
+
+variable "probe_request_path" {
+  type    = string
+  default = "/"
 }
