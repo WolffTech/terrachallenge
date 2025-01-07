@@ -19,7 +19,7 @@ resource "azurerm_subnet" "subnet" {
   for_each             = var.subnet_map
   name                 = "Wolff-Subnet_${each.key}-${var.prefix}"
   resource_group_name  = module.resource_group.name
-  virtual_network_name = module.resource_group.location
+  virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = each.value
 }
 
