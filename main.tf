@@ -102,7 +102,7 @@ resource "azurerm_backup_policy_vm" "abp" {
   }
 
   retention_daily {
-    count = 1
+    count = 7
   }
 }
 
