@@ -121,3 +121,14 @@ variable "nsg_security_rules" {
     destination_address_prefix = string
   }))
 }
+
+variable "backup_policy" {
+  description = "Configuration for the VM backup policy"
+  type = object({
+    name                  = string
+    timezone              = string
+    frequency             = string
+    time                  = string
+    retention_daily_count = number
+  })
+}

@@ -81,19 +81,19 @@ resource "azurerm_recovery_services_vault" "rsv" {
 # Backup Policy
 
 resource "azurerm_backup_policy_vm" "abp" {
-  name                = "tfex-recovery-vault-policy"
+  name                = "${var.backup_policy.name}-${var.prefix}"
   resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
 
-  timezone = "UTC"
+  timezone = var.backup_policy.timezone
 
   backup {
-    frequency = "Daily"
-    time      = "23:00"
+    frequency = var.backup_policy.frequency
+    time      = var.backup_policy.time
   }
 
   retention_daily {
-    count = 7
+   count = var.backp_policy.retention_daily_count
   }
 }
 

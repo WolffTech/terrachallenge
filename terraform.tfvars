@@ -68,10 +68,20 @@ probe_protocol            = "Http"
 probe_port                = 80
 probe_interval            = 15
 probe_unhealthy_threshold = 2
-probe_request_path         = "/"
+probe_request_path        = "/"
 
 # VMs
 
-vm_size    = "Standard_B1ms"
-login_name = "adminuser"
+vm_size             = "Standard_B1ms"
+login_name          = "adminuser"
 linux_machine_count = 2
+
+# Backup Policy
+
+backup_policy = {
+  name                  = "Wolff-ABP"
+  timezone              = "UTC"
+  frequency             = "Daily"
+  time                  = "23:00"
+  retention_daily_count = 7
+}
