@@ -112,6 +112,36 @@ variable "linux_vm_name" {
   type        = string
 }
 
+variable "disk_encryption" {
+  description = "Global disk encryption setting"
+  type        = bool
+  default     = true
+}
+
+variable "kv_sku" {
+  description = "SKU to use for the key vault"
+  type        = string
+  default     = "standard"
+}
+
+variable "rsv_sku" {
+  description = "SKU to use for the Recovery Services Vault"
+  type = string
+  default = "Standard"
+}
+
+variable "purge_protection" {
+  description = "Global purge protection setting"
+  type        = bool
+  default     = false
+}
+
+variable "soft_delete" {
+  description = "Global soft delete setting"
+  type        = bool
+  default     = false
+}
+
 variable "nsg_security_rules" {
   description = "List of security rules for the Network Security Group"
   type = list(object({

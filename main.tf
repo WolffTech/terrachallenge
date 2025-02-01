@@ -58,10 +58,10 @@ module "key_vault" {
   name                        = "Wolff-KV-${var.prefix}"
   location                    = var.location
   resource_group_name         = module.resource_group.name
-  enabled_for_disk_encryption = true
+  enabled_for_disk_encryption = var.disk_encryption
   soft_delete_retention_days  = 7
-  purge_protection_enabled    = false
-  sku_name                    = "standard"
+  purge_protection_enabled    = var.purge_protection
+  sku_name                    = var.kv_sku
 }
 
 # Recovery Services Vault
@@ -70,9 +70,9 @@ resource "azurerm_recovery_services_vault" "rsv" {
   name                = "Wolff-RSV-${var.prefix}"
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
-  sku                 = "Standard"
+  sku                 = var.rsv_sku
 
-  soft_delete_enabled = false
+  soft_delete_enabled = var.soft_delete
 
   tags = var.tags
 
