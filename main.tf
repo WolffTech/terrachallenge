@@ -29,40 +29,19 @@ resource "azurerm_network_security_group" "nsg" {
   resource_group_name = module.resource_group.name
   tags                = var.tags
 
-  security_rule {
-    name                       = "AllowAzureLoadBalancer"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "AzureLoadBalancer"
-    destination_address_prefix = "VirtualNetwork"
-  }
-
-  security_rule {
-    name                       = "AllowSSH"
-    priority                   = 120
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "AllowHTTP"
-    priority                   = 130
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "80"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
+  dynamic "security_rule" {
+    for_each = var.nsg_security_rules
+    content {
+      name                       = security_rule.value.name
+      priority                   = security_rule.value.priority
+      direction                  = security_rule.value.direction
+      access                     = security_rule.value.access
+      protocol                   = security_rule.value.protocol
+      source_port_range          = security_rule.value.source_port_range
+      destination_port_range     = security_rule.value.destination_port_range
+      source_address_prefix      = security_rule.value.source_address_prefix
+      destination_address_prefix = security_rule.value.destination_address_prefix
+    }
   }
 }
 
@@ -79,10 +58,10 @@ module "key_vault" {
   name                        = "Wolff-KV-${var.prefix}"
   location                    = var.location
   resource_group_name         = module.resource_group.name
-  enabled_for_disk_encryption = true
+  enabled_for_disk_encryption = var.disk_encryption
   soft_delete_retention_days  = 7
-  purge_protection_enabled    = false
-  sku_name                    = "standard"
+  purge_protection_enabled    = var.purge_protection
+  sku_name                    = var.kv_sku
 }
 
 # Recovery Services Vault
@@ -91,9 +70,9 @@ resource "azurerm_recovery_services_vault" "rsv" {
   name                = "Wolff-RSV-${var.prefix}"
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
-  sku                 = "Standard"
+  sku                 = var.rsv_sku
 
-  soft_delete_enabled = false
+  soft_delete_enabled = var.soft_delete
 
   tags = var.tags
 
@@ -102,19 +81,19 @@ resource "azurerm_recovery_services_vault" "rsv" {
 # Backup Policy
 
 resource "azurerm_backup_policy_vm" "abp" {
-  name                = "tfex-recovery-vault-policy"
+  name                = "${var.backup_policy.name}-${var.prefix}"
   resource_group_name = module.resource_group.name
   recovery_vault_name = azurerm_recovery_services_vault.rsv.name
 
-  timezone = "UTC"
+  timezone = var.backup_policy.timezone
 
   backup {
-    frequency = "Daily"
-    time      = "23:00"
+    frequency = var.backup_policy.frequency
+    time      = var.backup_policy.time
   }
 
   retention_daily {
-    count = 7
+    count = var.backup_policy.retention_daily_count
   }
 }
 
@@ -167,7 +146,7 @@ resource "tls_private_key" "tlspk" {
 module "linux_vms" {
   source              = "./modules/linux_vm"
   vm_count            = var.linux_machine_count
-  vm_name             = "Wolff-LinuxVM"
+  vm_name             = var.linux_vm_name
   location            = module.resource_group.location
   resource_group_name = module.resource_group.name
   vm_size             = var.vm_size
@@ -205,7 +184,7 @@ resource "azurerm_network_interface" "nic_windowsvm_1" {
 }
 
 resource "azurerm_windows_virtual_machine" "windowsvm_1" {
-  name                = "Wolff-WindowsVM"
+  name                = "${var.windows_vm.name}-${var.prefix}"
   resource_group_name = module.resource_group.name
   location            = module.resource_group.location
   size                = var.vm_size
@@ -217,15 +196,15 @@ resource "azurerm_windows_virtual_machine" "windowsvm_1" {
   ]
 
   os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+    caching              = var.windows_vm.caching
+    storage_account_type = var.windows_vm.storage_account_type
   }
 
   source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2016-Datacenter"
-    version   = "latest"
+    publisher = var.windows_vm.image_publisher
+    offer     = var.windows_vm.image_offer
+    sku       = var.windows_vm.image_sku
+    version   = var.windows_vm.image_version
   }
 
   tags = var.tags
